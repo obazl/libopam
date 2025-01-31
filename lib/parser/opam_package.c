@@ -42,6 +42,8 @@ struct opam_cmd_s {
     char *filter;
 };
 
+#define STRING_ARG 0
+#define VAR_ARG    1
 struct opam_arg_s {
     int  t;  // 0=string, 1=var, 2=filter?
     char *val;

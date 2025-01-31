@@ -1,8 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@makeheaders//rules:makeheaders.bzl", "makeheaders")
 
-CJSON_VERSION = "1.7.16"
-
 load("//config/cc:CONFIG.bzl", "BASE_COPTS")
 
 TIMEOUT = "short"
@@ -10,15 +8,88 @@ TIMEOUT = "short"
 test_suite(
     name = "lexis",
     tests = [
-        ":lexer"
+        ":lexer",
+        ":build",
+        ":deps",
+        ":filters"
     ]
 )
 ########
 cc_test(
+    name       = "build",
+    linkstatic = True,
+    srcs       = [
+        "lexer_build_test.c",
+        "lex_string_driver.c",
+        "lexer_test_init.c",
+        ":mkhdrs"
+    ],
+    deps       = [
+        "//lib/lexer:opam_lexer",
+        "@gopt//lib:gopt",
+        "@liblogc//lib:logc",
+        "@unity//lib:unity",
+        "@uthash//lib:uthash",
+    ],
+    copts      = BASE_COPTS + [
+        "-I$(GENDIR)/test/unit/lexer",
+    ],
+    linkopts   = [],
+    timeout    = TIMEOUT,
+)
+
+cc_test(
+    name       = "deps",
+    linkstatic = True,
+    srcs       = [
+        "lexer_deps_test.c",
+        "lex_string_driver.c",
+        "lexer_test_init.c",
+        ":mkhdrs"
+    ],
+    deps       = [
+        "//lib/lexer:opam_lexer",
+        "@gopt//lib:gopt",
+        "@liblogc//lib:logc",
+        "@unity//lib:unity",
+        "@uthash//lib:uthash",
+    ],
+    copts      = BASE_COPTS + [
+        "-I$(GENDIR)/test/unit/lexer",
+    ],
+    linkopts   = [],
+    timeout    = TIMEOUT,
+)
+
+cc_test(
+    name       = "filters",
+    linkstatic = True,
+    srcs       = [
+        "lexer_filters_test.c",
+        "lex_string_driver.c",
+        "lexer_test_init.c",
+        ":mkhdrs"
+    ],
+    deps       = [
+        "//lib/lexer:opam_lexer",
+        "@gopt//lib:gopt",
+        "@liblogc//lib:logc",
+        "@unity//lib:unity",
+        "@uthash//lib:uthash",
+    ],
+    copts      = BASE_COPTS + [
+        "-I$(GENDIR)/test/unit/lexer",
+    ],
+    linkopts   = [],
+    timeout    = TIMEOUT,
+)
+
+cc_test(
     name       = "lexer",
     linkstatic = True,
     srcs       = [
-        "lexer_test.c", "lex_string_driver.c",
+        "lexer_test.c",
+        "lex_string_driver.c",
         "lexer_test_init.c",
         ":mkhdrs"
     ],
@@ -40,7 +111,11 @@ cc_test(
 makeheaders(
     name = "mkhdrs",
     hdrs_srcs = [
-        "lexer_test.c", "lex_string_driver.c",
+        "lexer_test.c",
+        "lexer_build_test.c",
+        "lexer_deps_test.c",
+        "lexer_filters_test.c",
+        "lex_string_driver.c",
         "lexer_test_init.c"
     ],
     additional_srcs = [

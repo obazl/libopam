@@ -2,7 +2,7 @@
 
 #include "liblogc.h"
 #include "unity.h"
-#include "parser_test.h"
+#include "parser_deps_test.h"
 
 char *errmsg = "";
 

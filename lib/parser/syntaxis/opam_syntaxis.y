@@ -63,10 +63,11 @@ update it directly */
 %token AVAILABLE.
 %token BANG.
 %token BUG_REPORTS.
-%token BOOL.
+%token Bool.
 %token BUILD.
 %token BUILD_DOC.
 %token BUILD_ENV.
+%token CmdListFld.
 %token COLON.
 %token COMMA.
 %token CONFLICTS.
@@ -85,18 +86,19 @@ update it directly */
 %token FALSE.
 %token FEATURES.
 /* %token FILTER. */
+%token FLAG.
 %token FLAGS.
+%token FldName.
 %token FVF_LOGOP.
 %token HOMEPAGE.
-%token IDENT.
+%token Ident.
 %token IDENTCHAR.
 %token INSTALL.
-%token INT.
-%token KEYWORD.
+%token Int.
 %token LBRACE.
 %token LBRACKET.
 %token LICENSE.
-%token LOGOP.
+%token LogOp.
 %token LPAREN.
 %token MAINTAINER.
 %token MESSAGES.
@@ -104,19 +106,19 @@ update it directly */
 %token PACKAGE.
 %token PATCHES.
 %token PIN_DEPENDS.
-%token PKGNAME.
+%token PkgName.
 %token POST_MESSAGES.
 %token QMARK.
 %token RBRACE.
 %token RBRACKET.
 %token REMOVE.
-%token RELOP.
+%token RelOp.
 %token RPAREN.
 %token RUNTEST.
 %token SETENV.
 %token SQ.
-%token STRING.
-%token STRING3.
+%token String.
+%token String3.
 %token SUBSTS.
 %token SYNOPSIS.
 %token TAGS.
@@ -126,14 +128,14 @@ update it directly */
 %token TQ.
 %token TRUE.
 %token URL.
-%token VARIDENT.
+%token Varident.
 %token VERSION.
 
-%right LOGOP.
+%right LogOp.
 %right BANG.
 %right QMARK.
 
-%right RELOP.
+%right RelOp.
 
 
 /* **************** */
@@ -142,6 +144,9 @@ update it directly */
 /* %default_type { struct opam_entry_s * } /\* non-terminal default *\/ */
 
 %type package { struct opam_package_s * }
+%destructor package {
+    log_trace("freeing package");
+}
 %type binding { struct opam_binding_s * }
 %type fpf { struct opam_deps_s * }
 %type stringlist { UT_array * }
@@ -185,7 +190,7 @@ package ::= bindings . {
     for (b = opam_parse_state->pkg->bindings;
          b != NULL;
          b = b->hh.next) {
-        LOG_DEBUG(0, "\t%s:", b->name);
+        LOG_DEBUG(0, "\t%s: %s", b->name, b->val);
     }
 }
 
@@ -204,11 +209,11 @@ bindings(Bindings_lhs) ::= bindings(Bindings_rhs) binding . {
     Bindings_lhs = Bindings_rhs;
 }
 
-binding(Binding) ::= KEYWORD(Keyword) COLON STRING(String) . {
-    LOG_DEBUG(0, "BINDING: %s: %s", Keyword.s, String.s);
+binding(Binding) ::= FldName(Fldname) String(String) . {
+    LOG_DEBUG(0, "BINDING: %s: %s", Fldname.s, String.s);
     /* create a binding and add it to the pkg hashmap */
     Binding = calloc(sizeof(struct opam_binding_s), 1);
-    Binding->name = Keyword.s;
+    Binding->name = Fldname.s;
     Binding->t = BINDING_STRING;
     Binding->val = strdup(String.s);
     HASH_ADD_KEYPTR(hh, // opam_parse_state->pkg->bindings->hh,
@@ -216,11 +221,11 @@ binding(Binding) ::= KEYWORD(Keyword) COLON STRING(String) . {
                     Binding->name, strlen(Binding->name), Binding);
 }
 
-binding(Binding) ::= KEYWORD(Keyword) COLON string3(String) . {
-    LOG_DEBUG(0, "BINDING: %s: %s", Keyword.s, String.s);
+binding(Binding) ::= FldName(Fldname) COLON string3(String) . {
+    LOG_DEBUG(0, "BINDING: %s: %s", Fldname.s, String.s);
     /* create a binding and add it to the pkg hashmap */
     Binding = calloc(sizeof(struct opam_binding_s), 1);
-    Binding->name = Keyword.s;
+    Binding->name = Fldname.s;
     Binding->t = BINDING_STRING;
     Binding->val = strdup(String.s);
     HASH_ADD_KEYPTR(hh, // opam_parse_state->pkg->bindings->hh,
@@ -228,12 +233,12 @@ binding(Binding) ::= KEYWORD(Keyword) COLON string3(String) . {
                     Binding->name, strlen(Binding->name), Binding);
 }
 
-binding(Binding) ::= KEYWORD(Keyword) COLON LBRACKET stringlist(Stringlist) RBRACKET . {
+binding(Binding) ::= FldName(Fldname) COLON LBRACKET stringlist(Stringlist) RBRACKET . {
     LOG_DEBUG(0, "BINDING stringlist %s, ct: %d",
-           Keyword.s, utarray_len(Stringlist));
+           Fldname.s, utarray_len(Stringlist));
     /* create a binding and add it to the pkg hashmap */
     Binding = calloc(sizeof(struct opam_binding_s), 1);
-    Binding->name = Keyword.s;
+    Binding->name = Fldname.s;
     Binding->t = BINDING_STRINGLIST;
     Binding->val = (void*)Stringlist;
     HASH_ADD_KEYPTR(hh,
@@ -246,18 +251,21 @@ binding(Binding) ::= KEYWORD(Keyword) COLON LBRACKET stringlist(Stringlist) RBRA
 }
 
 /****************************************************************/
-/* build, install, run-test all have the same grammar:
+/* build, install, run-test, remove all have the same grammar:
     [ [ <term> { <filter> } ... ] { <filter> } ... ]
  */
 binding(Binding) ::=
-    BUILD LBRACKET cmdlist(Cmds) RBRACKET . {
+    CmdListFld LBRACKET cmdlist(Cmds) RBRACKET . {
+    /* BUILD LBRACKET cmdlist(Cmds) RBRACKET . { */
     LOG_DEBUG(0, "build [cmdlist]", "");
     // for each cmd in cmdlist, print the args
+    int ct = utarray_len(Cmds.cmds);
+    LOG_DEBUG(0, "cmd ct: %d", ct);
     struct opam_cmd_s *cmd = NULL;
     for(cmd=(struct opam_cmd_s*)utarray_front(Cmds.cmds);
         cmd!=NULL;
         cmd=(struct opam_cmd_s*)utarray_next(Cmds.cmds, cmd)) {
-        int ct = utarray_len(cmd->args);
+        ct = utarray_len(cmd->args);
         LOG_DEBUG(0, "cmd args ct: %d", ct);
         struct opam_arg_s *arg = NULL;
         for(arg=(struct opam_arg_s*)utarray_front(cmd->args);
@@ -353,7 +361,7 @@ args(NEWARGS) ::= args(xargs) arg(a) . {
     NEWARGS = xargs;
 }
 
-arg(ARG) ::= STRING(str) . {
+arg(ARG) ::= String(str) . {
     LOG_DEBUG(0, "string arg: %s", str.s);
     struct opam_arg_s *arg = (struct opam_arg_s*)malloc(
                        sizeof(struct opam_arg_s));
@@ -362,7 +370,16 @@ arg(ARG) ::= STRING(str) . {
     ARG.arg = arg;
 }
 
-arg(ARG) ::= VARIDENT(vid) . {
+arg(ARG) ::= Ident(ident) . {
+    LOG_DEBUG(0, "var arg: %s", ident.s);
+    struct opam_arg_s *arg = (struct opam_arg_s*)malloc(
+                       sizeof(struct opam_arg_s));
+    arg->val = strdup(ident.s);
+    arg->t   = 1;
+    ARG.arg = arg;
+}
+
+arg(ARG) ::= Varident(vid) . {
     LOG_DEBUG(0, "var arg: %s", vid.s);
     struct opam_arg_s *arg = (struct opam_arg_s*)malloc(
                        sizeof(struct opam_arg_s));
@@ -409,7 +426,7 @@ binding(Binding) ::=
                     Binding->name, strlen(Binding->name), Binding);
 }
 
-stringlist(Stringlist) ::= STRING(String) . {
+stringlist(Stringlist) ::= String(String) . {
 #if YYDEBUG
     LOG_DEBUG(0, "STRINGLIST single: %s", String.s);
 #endif
@@ -417,7 +434,7 @@ stringlist(Stringlist) ::= STRING(String) . {
     utarray_push_back(Stringlist, &String.s);
 }
 
-stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
+stringlist(Stringlist_lhs) ::= stringlist(Stringlist) String(String) . {
 #if YYDEBUG
     LOG_DEBUG(0, "STRINGLIST multiple, ct: %d; new: %s",
            utarray_len(Stringlist), String.s);
@@ -434,7 +451,7 @@ stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
 
     <pkgname>         ::= (") <ident> (")
 */
-/*     pkgname ::= DQ IDENT DQ . { */
+/*     pkgname ::= DQ Ident DQ . { */
 /* #if YYDEBUG */
 /*         printf("pkgname\n"); */
 /* #endif */
@@ -452,9 +469,9 @@ stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
 #endif
     }
 
-    fpf ::= fpf LOGOP fpf . {
+    fpf ::= fpf LogOp fpf . {
 #if YYDEBUG
-        LOG_DEBUG(0, "fpf: fpf LOGOP fpf", "");
+        LOG_DEBUG(0, "fpf: fpf LogOp fpf", "");
 #endif
     }
 
@@ -464,12 +481,12 @@ stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
 #endif
     }
 
-    fpf ::= PKGNAME(Pkg) fvf_expr . {
+    fpf ::= PkgName(Pkg) fvf_expr . {
         LOG_DEBUG(1, "fpf: pkgname fvf_expr:**************** %s",
                   Pkg.s);
     }
 
-    fpf ::= PKGNAME(Pkg) . {
+    fpf ::= PkgName(Pkg) . {
         LOG_DEBUG(0, "fpf: **************** pkgname: %s", Pkg.s);
         /* Deps = calloc(sizeof(struct opam_binding_s), 1); */
         /*  */
@@ -504,7 +521,7 @@ stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
 #endif
     }
 
-        logop_fvf ::= LOGOP fvf . {
+        logop_fvf ::= LogOp fvf . {
 #if YYDEBUG
         LOG_DEBUG(0, "fvf: fvf logop fvf", "");
 #endif
@@ -530,7 +547,7 @@ stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
 /*     } */
 
         // | <relop> <version>
-/*         fvf_base ::= RELOP VERSION . { */
+/*         fvf_base ::= RelOp VERSION . { */
 /* #if YYDEBUG */
 /*         LOG_DEBUG(0, "fvf_base: relop version"); */
 /* #endif */
@@ -561,7 +578,7 @@ stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
 /*     } */
 
         // | <relop> <filter>
-/*         fvf_base ::= RELOP filter . { */
+/*         fvf_base ::= RelOp filter . { */
 /* #if YYDEBUG */
 /*         LOG_DEBUG(0, "fvf_base: relop filter"); */
 /* #endif */
@@ -581,32 +598,32 @@ stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
    NB: <varident>, <string>, <int>, <bool> are lexed as FILTER tokens
     */
 
-/* arg ::= STRING build_filter . { */
+/* arg ::= String build_filter . { */
 /*     LOG_DEBUG(0, "arg TERM_STRING arg", ""); */
 /* } */
 
-/* build_filter ::= LBRACE INT(intgr) RBRACE . { */
+/* build_filter ::= LBRACE Int(intgr) RBRACE . { */
 /*     LOG_DEBUG(0, "{int}: %d", intgr.i); */
 /* } */
 
-/* build_filter_expr ::= STRING(str) . { */
+/* build_filter_expr ::= String(str) . { */
 /*     LOG_DEBUG(0, "filter pred: %s", str.s); */
 /* } */
 
-/* build_filter_expr ::= INT(intgr) . { */
+/* build_filter_expr ::= Int(intgr) . { */
 /*     LOG_DEBUG(0, "filter pred: %d", intgr.i); */
 /* } */
 
-/* build_filter_expr ::= VARIDENT(vi) . { */
+/* build_filter_expr ::= Varident(vi) . { */
 /*     LOG_DEBUG(0, "filter pred:: varident %s", vi.s); */
 /* } */
 
-/* build_filter_expr ::= build_filter_expr LOGOP(logop) build_filter_expr . { */
+/* build_filter_expr ::= build_filter_expr LogOp(logop) build_filter_expr . { */
 /*     LOG_DEBUG(0, "compound filter: <pred> %s <pred>", logop.s); */
 /* } */
 
-/* build_filter_expr ::= build_filter_expr RELOP build_filter_expr . { */
-/*     LOG_DEBUG(0, "build_filter RELOP", ""); */
+/* build_filter_expr ::= build_filter_expr RelOp build_filter_expr . { */
+/*     LOG_DEBUG(0, "build_filter RelOp", ""); */
 /* } */
 
 /* build_filter_expr ::= FILTER . { */
@@ -621,17 +638,25 @@ stringlist(Stringlist_lhs) ::= stringlist(Stringlist) STRING(String) . {
 filter ::= LBRACE pred RBRACE . {
     LOG_DEBUG(0, "{pred}", "");
 }
-pred ::= pred LOGOP(logop) pred . {
+pred ::= pred LogOp(logop) pred . {
     LOG_DEBUG(0, "compound pred: <pred> %s <pred>", logop.s);
 }
-pred ::= INT(vid) . {
-    LOG_DEBUG(0, "pred: %s", vid.s);
+
+pred ::= pterm . {
+    LOG_DEBUG(0, "pred", "");
 }
-pred ::= STRING(str) . {
-    LOG_DEBUG(0, "pred: %s", str.s);
+
+/* predicate terms:: int | string | var */
+/* =>  struct opam_pterm_s */
+pterm ::= Int(vid) . {
+/* pred ::= Int(vid) . { */
+    LOG_DEBUG(0, "pred int: %s", vid.s);
 }
-pred ::= VARIDENT(vid) . {
-    LOG_DEBUG(0, "pred: %s", vid.s);
+pred ::= String(str) . {
+    LOG_DEBUG(0, "pred str: %s", str.s);
+}
+pterm ::= Varident(vid) . {
+    LOG_DEBUG(0, "pterm var: %s", vid.s);
 }
 pred ::= BANG pred . {
         LOG_DEBUG(0, "pred: BANG filter", "");
@@ -642,19 +667,19 @@ pred ::= QMARK pred . {
 pred ::= LPAREN pred RPAREN . {
     LOG_DEBUG(0, "pred: (pred)", "");
 }
-pred ::= pred RELOP(relop) pred . {
+pred ::= pred RelOp(relop) pred . {
         LOG_DEBUG(0, "pred: pred %s pred", relop.s);
 }
 
-/* filter ::= LBRACE VARIDENT(vid) RBRACE . { */
+/* filter ::= LBRACE Varident(vid) RBRACE . { */
 /*     LOG_DEBUG(0, "FILTER varid: %s", vid.s); */
 /* } */
 
-/* filter ::= LBRACE INT(intgr) RBRACE . { */
+/* filter ::= LBRACE Int(intgr) RBRACE . { */
 /*     LOG_DEBUG(0, "filter int: %d", intgr.i); */
 /* } */
 
-/* filter ::= LBRACE STRING(str) RBRACE . { */
+/* filter ::= LBRACE String(str) RBRACE . { */
 /*     LOG_DEBUG(0, "filter str: %s", str.s); */
 /* } */
 
@@ -662,19 +687,19 @@ pred ::= pred RELOP(relop) pred . {
 /*     LOG_DEBUG(0, "filter", ""); */
 /* } */
 
-/* filter_expr ::= filter . [LOGOP] { */
+/* filter_expr ::= filter . [LogOp] { */
 /*     LOG_DEBUG(0, "filter_expr: filter", ""); */
 /*     } */
 
-/* filter_expr ::= filter LOGOP filter . { */
+/* filter_expr ::= filter LogOp filter . { */
 /*     LOG_DEBUG(0, "filter_expr: filter_expr logop_filter", ""); */
 /* } */
 
-/* filter ::= RELOP VERSION . { */
+/* filter ::= RelOp VERSION . { */
 /*     LOG_DEBUG(0, "filter: relop version", ""); */
 /* } */
 
-/*         logop_filter ::= LOGOP filter . { */
+/*         logop_filter ::= LogOp filter . { */
 /* #if YYDEBUG */
 /*         LOG_DEBUG(0, "logop_filter: logop filter"); */
 /* #endif */
@@ -684,12 +709,12 @@ pred ::= pred RELOP(relop) pred . {
 /*         LOG_DEBUG(0, "filter: FILTER", ""); */
 /* } */
 
-/* filter ::= VARIDENT . { */
-/*     LOG_DEBUG(0, "filter: VARIDENT", ""); */
+/* filter ::= Varident . { */
+/*     LOG_DEBUG(0, "filter: Varident", ""); */
 /* } */
 
-string3 ::= TQ STRING3 TQ . {
+string3 ::= TQ String3 TQ . {
 }
 
-string3 ::= TQ STRING3 STRING STRING3 TQ . {
+string3 ::= TQ String3 String String3 TQ . {
 }

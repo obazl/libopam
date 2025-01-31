@@ -19,9 +19,14 @@ LINKOPTS      = BASE_LINKOPTS
 exports_files(["opam_lexer.c", "opam_lexis.c"])
 
 ######################################################
-## dev flag tells Bazel to regenerate the parser
+## dev flag tells Bazel to regenerate the lexer
 bool_flag(name = "dev", build_setting_default = False)
 config_setting(name = "dev?", flag_values = {":dev": "True"})
+
+## enable debug logging
+bool_flag(name = "debug-lexer", build_setting_default = False)
+config_setting(name = "debug-lexer?",
+               flag_values = {":debug-lexer": "True"})
 
 ###########
 cc_library(
@@ -56,14 +61,12 @@ cc_library(
         ## for strdup, strndup:
         "@platforms//os:linux": ["_POSIX_C_SOURCE=200809L"],
         "//conditions:default": []
-    # }) + select({
-    #     "@obazl_config_cc//profile:dev?" : ["LEXDEBUG"]
     }),
     local_defines = select({
         ":dev?": ["YYDEBUG"],
         "//conditions:default":   []
     }) + select({
-        ":lexdebug-enabled": ["LEXDEBUG"],
+        ":debug-lexer?": ["LEXDEBUG"],
         "//conditions:default":   []
     }) + select({
         ":lexdebug-version": ["LEXDEBUG_VERSION"],
@@ -96,7 +99,8 @@ makeheaders(
         ],
     }),
     additional_srcs = select({
-        "//lib/parser:dev?": [
+        # "//lib/parser:dev?": [
+        "//lib/lexer:dev?": [
             "//lib/parser/syntaxis:opam_syntaxis.c"
         ],
         "//conditions:default": [
@@ -108,6 +112,7 @@ makeheaders(
             "@liblogc//macros:logging_debug.h"
         ],
         "//conditions:default": [
+            "@liblogc//macros:ansi_colors.h",
             "@liblogc//macros:logging_ndebug.h"
         ]
     }),

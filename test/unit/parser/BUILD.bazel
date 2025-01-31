@@ -10,9 +10,53 @@ TIMEOUT = "short"
 test_suite(
     name = "syntaxis",
     tests = [
-        ":parser"
+        ":parser",
+        ":build",
+        ":deps"
     ]
 )
+########
+cc_test(
+    name       = "build",
+    linkstatic = True,
+    srcs       = ["parser_build_test.c",
+                  "parser_test_init.c",
+                  ":mkhdrs"],
+    deps       = [
+        "//lib:opamc",
+        "@gopt//lib:gopt",
+        "@liblogc//lib:logc",
+        "@unity//lib:unity",
+        "@uthash//lib:uthash",
+    ],
+    copts      = BASE_COPTS + [
+        "-I$(GENDIR)/test/unit/parser",
+    ],
+    linkopts   = [],
+    timeout    = TIMEOUT,
+)
+
+########
+cc_test(
+    name       = "deps",
+    linkstatic = True,
+    srcs       = ["parser_deps_test.c",
+                  "parser_test_init.c",
+                  ":mkhdrs"],
+    deps       = [
+        "//lib:opamc",
+        "@gopt//lib:gopt",
+        "@liblogc//lib:logc",
+        "@unity//lib:unity",
+        "@uthash//lib:uthash",
+    ],
+    copts      = BASE_COPTS + [
+        "-I$(GENDIR)/test/unit/parser",
+    ],
+    linkopts   = [],
+    timeout    = TIMEOUT,
+)
+
 ########
 cc_test(
     name       = "parser",
@@ -38,10 +82,13 @@ cc_test(
 makeheaders(
     name = "mkhdrs",
     hdrs_srcs = ["parser_test.c",
+                 "parser_build_test.c",
+                 "parser_deps_test.c",
                  "parser_test_init.c"],
     additional_srcs = [
-        "//lib:mkhdrs_export",
-        # "//lib/parser:opam_parser.c",
+        # "//lib:mkhdrs_export",
+        "//lib/parser:opam_package.c",
+        "//lib/parser:opam_parser.c",
     ] + select({
         # "//lib/parser:dev?": [
         #     "//lib/parser/syntaxis:opam_syntaxis.c"],

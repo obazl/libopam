@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "utstring.h"
 #include "liblogc.h"
 
 #include "opam_lexer.h"
@@ -17,76 +18,77 @@ bool TRACE_FLAG;
 
 #if defined(LEXDEBUG)
 EXPORT char *opam_token_names[256] = {
-    [AMP]      = TOKEN_NAME(amp),
-    [AUTHORS]      = TOKEN_NAME(authors),
-    [AVAILABLE]      = TOKEN_NAME(available),
+    [AMP]      = TOKEN_NAME(AMP),
+    [AUTHORS]      = TOKEN_NAME(AUTHORS),
+    [AVAILABLE]      = TOKEN_NAME(AVAILABLE),
     [BANG]      = TOKEN_NAME(BANG),
-    [BOOL]      = TOKEN_NAME(bool),
-    [BUG_REPORTS]  = TOKEN_NAME(bug_reports),
+    [Bool]      = TOKEN_NAME(Bool),
+    [BUG_REPORTS]  = TOKEN_NAME(BUG_REPORTS),
     [BUILD]      = TOKEN_NAME(BUILD),
     [BUILD_DOC]      = TOKEN_NAME(BUILD_DOC),
     [BUILD_ENV]      = TOKEN_NAME(BUILD_ENV),
+    [CmdListFld]  = TOKEN_NAME(CmdListFld),
     [COLON]        = TOKEN_NAME(COLON),
     [COMMA]        = TOKEN_NAME(COMMA),
-    [CONFLICTS]      = TOKEN_NAME(conflicts),
-    [CONFLICT_CLASS]      = TOKEN_NAME(conflict_class),
-    [DEPENDS]      = TOKEN_NAME(depends),
-    [DEPEXTS]      = TOKEN_NAME(depexts),
-    [DEPOPTS]      = TOKEN_NAME(depopts),
-    [DESCRIPTION]      = TOKEN_NAME(description),
-    [DEV_REPO]      = TOKEN_NAME(dev_repo),
-    [DOC]          = TOKEN_NAME(doc),
+    [CONFLICTS]      = TOKEN_NAME(CONFLICTS),
+    [CONFLICT_CLASS]      = TOKEN_NAME(CONFLICT_CLASS),
+    [DEPENDS]      = TOKEN_NAME(DEPENDS),
+    [DEPEXTS]      = TOKEN_NAME(DEPEXTS),
+    [DEPOPTS]      = TOKEN_NAME(DEPOPTS),
+    [DESCRIPTION]      = TOKEN_NAME(DESCRIPTION),
+    [DEV_REPO]      = TOKEN_NAME(DEV_REPO),
+    [DOC]          = TOKEN_NAME(DOC),
     [DQ]           = TOKEN_NAME(DQ),
     [EQ]           = TOKEN_NAME(EQ),
-    [ERROR]        = TOKEN_NAME(error),
-    [EXTRA_FILES]      = TOKEN_NAME(extra_files),
-    [EXTRA_SOURCE]      = TOKEN_NAME(extra_source),
+    [ERROR]        = TOKEN_NAME(ERROR),
+    [EXTRA_FILES]  = TOKEN_NAME(extra_files),
+    [EXTRA_SOURCE] = TOKEN_NAME(extra_source),
     [FALSE]        = TOKEN_NAME(FALSE),
-    [FEATURES]      = TOKEN_NAME(features),
-    [FILTER]      = TOKEN_NAME(filter),
-    [FLAGS]      = TOKEN_NAME(flags),
+    [FEATURES]     = TOKEN_NAME(FEATURES),
+    [FLAGS]        = TOKEN_NAME(FLAGS),
+    [FLAG]         = TOKEN_NAME(FLAG),
+    [FldName]      = TOKEN_NAME(FldName),
     /* [FVF_LOGOP]      = TOKEN_NAME(FVF_LOGOP), */
     [HOMEPAGE]     = TOKEN_NAME(homepage),
-    [IDENT]      = TOKEN_NAME(ident),
-    [IDENTCHAR]      = TOKEN_NAME(identchar),
-    [INSTALL]      = TOKEN_NAME(install),
-    [INT]          = TOKEN_NAME(int),
-    [KEYWORD]      = TOKEN_NAME(keyword),
+    [Ident]        = TOKEN_NAME(Ident),
+    [IDENTCHAR]    = TOKEN_NAME(IDENTCHAR),
+    [INSTALL]      = TOKEN_NAME(INSTALL),
+    [Int]          = TOKEN_NAME(Int),
     [LBRACE]      = TOKEN_NAME(LBRACE),
     [LBRACKET]      = TOKEN_NAME(LBRACKET),
-    [LICENSE]      = TOKEN_NAME(license),
-    [LOGOP]      = TOKEN_NAME(LOGOP),
+    [LICENSE]      = TOKEN_NAME(LICENSE),
+    [LogOp]      = TOKEN_NAME(LogOp),
     [LPAREN]       = TOKEN_NAME(LPAREN),
-    [MAINTAINER]   = TOKEN_NAME(maintainer),
-    [MESSAGES]      = TOKEN_NAME(messages),
-    [OPAM_VERSION] = TOKEN_NAME(opam_version),
-    [PACKAGE]      = TOKEN_NAME(package),
-    [PATCHES]      = TOKEN_NAME(patches),
-    [PIN_DEPENDS]      = TOKEN_NAME(pin_depends),
-    [PKGNAME]      = TOKEN_NAME(pkgname),
-    [POST_MESSAGES]      = TOKEN_NAME(post_messages),
+    [MAINTAINER]   = TOKEN_NAME(MAINTAINER),
+    [MESSAGES]      = TOKEN_NAME(MESSAGES),
+    [OPAM_VERSION] = TOKEN_NAME(OPAM_VERSION),
+    [PACKAGE]      = TOKEN_NAME(PACKAGE),
+    [PATCHES]      = TOKEN_NAME(PATCHES),
+    [PIN_DEPENDS]      = TOKEN_NAME(PIN_DEPENDS),
+    [PkgName]      = TOKEN_NAME(PkgName),
+    [POST_MESSAGES]      = TOKEN_NAME(POST_MESSAGES),
     [QMARK]      = TOKEN_NAME(QMARK),
     [RBRACE]      = TOKEN_NAME(RBRACE),
     [RBRACKET]      = TOKEN_NAME(RBRACKET),
-    [RELOP]      = TOKEN_NAME(RELOP),
-    [REMOVE]      = TOKEN_NAME(remove),
+    [RelOp]      = TOKEN_NAME(RelOp),
+    [REMOVE]      = TOKEN_NAME(REMOVE),
     [RPAREN]       = TOKEN_NAME(RPAREN),
-    [RUNTEST]      = TOKEN_NAME(run_test),
-    [SETENV]      = TOKEN_NAME(setenv),
-    [SQ]      = TOKEN_NAME(sq),
-    [STRING]       = TOKEN_NAME(STRING),
-    [STRING3]       = TOKEN_NAME(string3),
-    [SUBSTS]      = TOKEN_NAME(substs),
-    [SYNOPSIS]      = TOKEN_NAME(synopsis),
-    [TAGS]      = TOKEN_NAME(tags),
+    [RUNTEST]      = TOKEN_NAME(RUN_TEST),
+    [SETENV]      = TOKEN_NAME(SETENV),
+    [SQ]      = TOKEN_NAME(SQ),
+    [String]       = TOKEN_NAME(String),
+    [String3]       = TOKEN_NAME(String3),
+    [SUBSTS]      = TOKEN_NAME(SUBSTS),
+    [SYNOPSIS]      = TOKEN_NAME(SYNOPSIS),
+    [TAGS]      = TOKEN_NAME(TAGS),
     [TERM]      = TOKEN_NAME(TERM),
     [TERM_STRING]      = TOKEN_NAME(TERM_STRING),
     [TERM_VARIDENT]      = TOKEN_NAME(TERM_VARIDENT),
     [TQ]         = TOKEN_NAME(TQ),
     [TRUE]         = TOKEN_NAME(TRUE),
-    [URL]      = TOKEN_NAME(url),
-    [VARIDENT]     = TOKEN_NAME(varident),
-    [VERSION]      = TOKEN_NAME(version),
+    [URL]      = TOKEN_NAME(URL),
+    [Varident]     = TOKEN_NAME(Varident),
+    [VERSION]      = TOKEN_NAME(VERSION),
     NULL
 };
 #endif
@@ -99,6 +101,103 @@ bool is_empty(const char *s)
     s++;
   }
   return true;
+}
+
+int token_type;
+
+EXPORT int opam_get_next_token(struct opam_lexer_s *lexer,
+                               union opam_token_u *otok,
+                               UT_string *accum)
+{
+    token_type = get_next_opam_token(lexer, otok);
+    if (token_type < 0) {
+
+        switch(token_type) {
+        case ERR_VARIDENT:
+            fprintf(stderr, RED "ERROR" CRESET
+                    " Bad varident: %s\n", otok->s);
+            break;
+        default:
+            LOG_ERROR(0, "Other error: %d", token_type);
+        }
+        const char *ptr = lexer->tok;
+        if (lexer->line > 0) {
+            while (*ptr != '\n') ptr--;
+            ptr++;
+        } else {
+            ptr = lexer->start;
+        }
+        int len; char buf[4];
+        len = snprintf(buf, sizeof(buf), "%d", lexer->line);
+        len += snprintf(buf, sizeof(buf), "%d", lexer->pos);
+        fprintf(stderr, RED "ERROR" CRESET
+                " line %d, pos %d: \"%s\"\n",
+                lexer->line, lexer->pos, ptr);
+        fprintf(stderr, RED "%*s\n" CRESET,
+                lexer->pos+21 + len, "^");
+        goto result;
+    }
+
+    if (token_type == 0) {      /* finished */
+        goto result;
+    }
+
+#if defined(LEXDEBUG)
+    LOG_DEBUG(1, "mode: %d; token type: %d: %s",
+              lexer->mode,
+              token_type,
+              opam_token_names[token_type]);
+
+    utstring_printf(accum, "%s", opam_token_names[token_type]);
+
+    switch(token_type) {
+    case Bool:
+        utstring_printf(accum, "(%s) ", (char*)otok->s);
+        break;
+    case FldName:
+        LOG_DEBUG(0, "\tFldName %s", (char*)otok->s);
+        utstring_printf(accum, "(%s) ", (char*)otok->s);
+        break;
+    case CmdListFld:
+        utstring_printf(accum, "(%s) ", (char*)otok->s);
+        break;
+    case FLAG:
+        LOG_DEBUG(0, "\ts: %s", (char*)otok->s);
+        utstring_printf(accum, "(\"%s\") ", (char*)otok->s);
+        break;
+    case VERSION:
+        LOG_DEBUG(0, "\ts: %s", (char*)otok->s);
+        utstring_printf(accum, "(%s) ", (char*)otok->s);
+        break;
+    case DESCRIPTION:
+    case OPAM_VERSION:
+    case PkgName:
+    case String:
+        utstring_printf(accum, "(%s) ", (char*)otok->s);
+        break;
+    case String3:
+    case SYNOPSIS:
+    case TERM:
+    case TERM_STRING:
+    case TERM_VARIDENT:
+    case Ident:
+    case Varident:
+        /* LOG_DEBUG(0, "\ts: %s", (char*)otok->s); */
+        utstring_printf(accum, "(%s) ", (char*)otok->s);
+        break;
+    case Int:
+        utstring_printf(accum, "(%d) ", (int)otok->i);
+        break;
+    case LogOp:
+    case RelOp:
+        utstring_printf(accum, "(%s) ", (char*)otok->s);
+        break;
+    default:
+        utstring_printf(accum, " ");
+    }
+#endif
+ result:
+    return token_type;
 }
 
 EXPORT void opam_lex_file(char *fname)
@@ -164,19 +263,19 @@ EXPORT void opam_lex_file(char *fname)
                   tok, opam_token_names[tok]);
         switch(tok) {
         case DESCRIPTION:
-        case FILTER:
-        case KEYWORD:
-        case LOGOP:
+        /* case FILTER: */
+        case FldName:
+        case LogOp:
         case OPAM_VERSION:
-        case PKGNAME:
-        case RELOP:
-        case STRING:
-        case STRING3:
+        case PkgName:
+        case RelOp:
+        case String:
+        case String3:
         case SYNOPSIS:
         case TERM:
         case TERM_STRING:
         case TERM_VARIDENT:
-        case VARIDENT:
+        case Varident:
         case VERSION:
             LOG_DEBUG(0, "\ts: %s", (char*)otok.s); break;
         /* default: */

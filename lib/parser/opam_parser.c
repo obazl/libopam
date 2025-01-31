@@ -130,6 +130,9 @@ EXPORT struct opam_package_s *opam_parse_string(const char *label,
     log_set_level(LOG_TRACE);
     /* log_info("starting parse"); */
 
+    /* while ( (token_type */
+    /*          = opam_get_next_token(opam_lexer, &otok)) != 0 ) { */
+
     while ( (token_type = get_next_opam_token(opam_lexer, &otok)) != 0 ) {
 #if defined(LEXDEBUG)
         log_debug("token type: %d: %s",

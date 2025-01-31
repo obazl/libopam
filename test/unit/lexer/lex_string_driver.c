@@ -34,48 +34,23 @@ EXPORT char *opam_lex_string(char *s)
     struct opam_lexer_s * lexer = malloc(sizeof(struct opam_lexer_s));
     opam_lexer_init(NULL, lexer, s);
 
-    int tok;
+    int token_type;
     union opam_token_u otok; // = malloc(sizeof(union opam_token));
 
     UT_string *accum;
     utstring_new(accum);
 
-    while ( (tok = get_next_opam_token(lexer, &otok)) != 0 ) {
-#if defined(LEXDEBUG)
-        LOG_DEBUG(0, "mode: %d; token type: %d: %s",
-                  lexer->mode,
-                  tok, opam_token_names[tok]);
-        utstring_printf(accum, "%s", opam_token_names[tok]);
-        switch(tok) {
-        case DESCRIPTION:
-        case FILTER:
-        case KEYWORD:
-        case OPAM_VERSION:
-        case PKGNAME:
-        case STRING:
-        case STRING3:
-        case SYNOPSIS:
-        case TERM:
-        case TERM_STRING:
-        case TERM_VARIDENT:
-        case VARIDENT:
-        case VERSION:
-            LOG_DEBUG(0, "\ts: %s", (char*)otok.s);
-            utstring_printf(accum, "=\"%s\" ", (char*)otok.s);
-            break;
-        case INT:
-        case LOGOP:
-        case RELOP:
-            utstring_printf(accum, "='%s' ", (char*)otok.s);
-            break;
-        default:
-            utstring_printf(accum, " ");
+    while ( (token_type = opam_get_next_token(lexer,
+                                              &otok,
+                                              accum)
+             ) != 0 ) {
+        if (token_type < 0) {
+            utstring_free(accum);
+            return NULL;
         }
-#endif
-        /* otok = malloc(sizeof(union opam_token)); */
     }
-    LOG_DEBUG(0, "accum: %s", utstring_body(accum));
-    LOG_TRACE(0, "opam_lexer: end of input", "");
+    /* LOG_DEBUG(0, "accum: %s", utstring_body(accum)); */
+    /* LOG_TRACE(0, "opam_lexer: end of input", ""); */
     /* remove trailing space */
     char *result = strdup(utstring_body(accum));
     result[strlen(result) - 1] = '\0';

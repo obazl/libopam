@@ -51,11 +51,14 @@ enum OPTS {
 struct option options[] = {
     /* 0 */
     [FLAG_DEBUG] = {.long_name="debug",.short_name='d',
-                    .flags=GOPT_ARGUMENT_FORBIDDEN | GOPT_REPEATABLE},
+                    .flags=GOPT_ARGUMENT_FORBIDDEN
+                    | GOPT_REPEATABLE},
     [FLAG_DEBUG_LEXIS] = {.long_name="debug-lexer",
-                           .flags=GOPT_ARGUMENT_FORBIDDEN},
+                          .flags=GOPT_ARGUMENT_FORBIDDEN
+                          | GOPT_REPEATABLE},
     [FLAG_DEBUG_SYNTAXIS] = {.long_name="debug-parser",
-                        .flags=GOPT_ARGUMENT_FORBIDDEN},
+                             .flags=GOPT_ARGUMENT_FORBIDDEN
+                             | GOPT_REPEATABLE},
     [FLAG_TRACE] = {.long_name="trace",.short_name='t',
                     .flags=GOPT_ARGUMENT_FORBIDDEN},
     [FLAG_TRACE_LEXIS] = {.long_name="trace-lexis",
